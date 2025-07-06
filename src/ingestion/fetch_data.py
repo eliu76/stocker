@@ -1,11 +1,15 @@
 import os
 import requests
+import praw
 from dotenv import load_dotenv
 
 load_dotenv()
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
+REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
+REDDIT_SECRET = os.getenv("REDDIT_SECRET")
+REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 def fetch_newsapi_articles(query, limit=5):
     """
@@ -48,24 +52,21 @@ def fetch_finnhub_news(ticker, limit=5):
     except Exception as e:
         return [f"[Finnhub error] {str(e)}"]
 
-def fetch_pushshift_reddit_posts(query, limit=5):
-    """
-    Fetch recent Reddit comments/posts using Pushshift API (unofficial).
-    """
-    url = f"https://api.pushshift.io/reddit/search/comment/"
-    params = {
-        "q": query,
-        "size": limit,
-        "sort": "desc"
-    }
+def fetch_reddit_posts(query, limit=5):
+    reddit = praw.Reddit(
+        client_id=REDDIT_CLIENT_ID,
+        client_secret=REDDIT_SECRET,
+        user_agent=REDDIT_USER_AGENT
+    )
 
+    posts = []
     try:
-        res = requests.get(url, params=params)
-        res.raise_for_status()
-        data = res.json().get("data", [])
-        return [d["body"] for d in data]
+        for submission in reddit.subreddit("all").search(query, limit=limit):
+            posts.append(submission.title + ". " + submission.selftext[:280])
     except Exception as e:
-        return [f"[Reddit error] {str(e)}"]
+        posts.append(f"[Reddit API error] {str(e)}")
+
+    return posts
 
 def fetch_all_sources(ticker, name=None, limit=5):
     """
@@ -82,7 +83,7 @@ def fetch_all_sources(ticker, name=None, limit=5):
     print(f"[+] Fetched {len(finnhub_articles)} Finnhub articles.")
     combined.extend(finnhub_articles)
 
-    reddit_posts = fetch_pushshift_reddit_posts(name, limit)
+    reddit_posts = fetch_reddit_posts(name, limit)
     print(f"[+] Fetched {len(reddit_posts)} Reddit posts.")
     combined.extend(reddit_posts)
 
