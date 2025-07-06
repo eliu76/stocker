@@ -11,7 +11,6 @@ AI-powered assistant that ingests financial text data, analyzes sentiment, and g
 ## Structure
 - `src/`: All core source code
 - `data/`: Input/output examples and raw data
-- `notebooks/`: Jupyter notebooks for development
 - `app/`: API or CLI interface
 - `tests/`: Unit and integration tests
 

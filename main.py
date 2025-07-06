@@ -1,20 +1,24 @@
-import os
 from dotenv import load_dotenv
 from src.ingestion.fetch_data import fetch_all_sources
+from src.ingestion.parse_data import parse_input
 
 def main():
-    load_dotenv()  # Load API keys from .env
-
+    load_dotenv()
     ticker = "AAPL"
     name = "Apple"
 
-    print(f"\n[Testing data fetch for: {ticker} - {name}]")
+    print(f"[Testing data fetch for: {ticker}]")
+    raw_data = fetch_all_sources(ticker, name, limit=5)
 
-    results = fetch_all_sources(ticker=ticker, name=name, limit=3)
+    print("\n--- Raw Fetched Data ---")
+    for line in raw_data:
+        print(f"- {line}")
 
-    print("\n--- Combined Fetched Data ---\n")
-    for i, content in enumerate(results, 1):
-        print(f"{i}. {content}\n")
+    cleaned = parse_input(raw_data)
+
+    print("\n--- Parsed/Cleaned Data ---")
+    for i, line in enumerate(cleaned, 1):
+        print(f"{i}. {line}")
 
 if __name__ == "__main__":
     main()

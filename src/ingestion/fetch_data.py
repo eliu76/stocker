@@ -1,3 +1,5 @@
+# this class uses several web APIs to scrape the web for certain sentiment around an inputted stock ticker and name
+
 import os
 import requests
 import praw
