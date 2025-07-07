@@ -1,6 +1,9 @@
 from dotenv import load_dotenv
 from src.ingestion.fetch_data import fetch_all_sources
 from src.ingestion.parse_data import parse_input
+from src.analysis.sentiment_analysis import analyze_sentiment
+from src.analysis.explain_sentiment import generate_explanation
+
 
 def main():
     load_dotenv()
@@ -19,6 +22,29 @@ def main():
     print("\n--- Parsed/Cleaned Data ---")
     for i, line in enumerate(cleaned, 1):
         print(f"{i}. {line}")
+
+    if not cleaned:
+        print("\n[!] No clean data to analyze.")
+        return
+
+    # ✅ Sentiment Analysis
+    result = analyze_sentiment(cleaned)
+
+    print("\n--- Sentiment Analysis ---")
+    print(f"Overall Sentiment: {result['overall_sentiment']}")
+    print(f"Average Score: {result['average_score']}")
+    print(f"Summary: {result['summary']}")
+    print("Distribution:", result["distribution"])
+
+    print("\n--- Detailed Scores ---")
+    for i, item in enumerate(result["individual_scores"], 1):
+        print(f"{i}. [{item['label']}] ({item['score']}): {item['text']}")
+        if item["financial_keywords"]:
+            print(f"    ↳ Financial Keywords: {item['financial_keywords']}")
+
+    print("\n--- Explanation ---")
+    explanation = generate_explanation(result, ticker, name)
+    print(explanation)
 
 if __name__ == "__main__":
     main()
