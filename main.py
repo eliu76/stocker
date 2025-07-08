@@ -3,6 +3,7 @@ from src.ingestion.fetch_data import fetch_all_sources
 from src.ingestion.parse_data import parse_input
 from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
+from src.analysis.generate_recommendation import generate_recommendation
 
 
 def main():
@@ -27,7 +28,6 @@ def main():
         print("\n[!] No clean data to analyze.")
         return
 
-    # ✅ Sentiment Analysis
     result = analyze_sentiment(cleaned)
 
     print("\n--- Sentiment Analysis ---")
@@ -45,6 +45,11 @@ def main():
     print("\n--- Explanation ---")
     explanation = generate_explanation(result, ticker, name)
     print(explanation)
+
+    print("\n--- Recommendation ---")
+    rec = generate_recommendation(result, ticker, name)
+    print(f"Recommendation for {rec['ticker']}: {rec['recommendation']}")
+    print(f"Reasoning: {rec['reasoning']}")
 
 if __name__ == "__main__":
     main()

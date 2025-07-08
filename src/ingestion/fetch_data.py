@@ -3,6 +3,7 @@
 import os
 import requests
 import praw
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,7 +16,7 @@ REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 def fetch_newsapi_articles(query, limit=5):
     """
-    Fetch recent news from NewsAPI related to the stock.
+    fetch recent news from NewsAPI related to the stock.
     """
     url = "https://newsapi.org/v2/everything"
     params = {
@@ -36,7 +37,7 @@ def fetch_newsapi_articles(query, limit=5):
 
 def fetch_finnhub_news(ticker, limit=5):
     """
-    Fetch company news from Finnhub related to the ticker.
+    fetch company news from Finnhub related to the ticker.
     """
     url = f"https://finnhub.io/api/v1/company-news"
     params = {
@@ -72,7 +73,7 @@ def fetch_reddit_posts(query, limit=5):
 
 def fetch_all_sources(ticker, name=None, limit=5):
     """
-    Fetch data from NewsAPI, Finnhub, and Reddit.
+    fetch data from NewsAPI, Finnhub, and Reddit.
     """
     name = name or ticker
     combined = []
@@ -90,3 +91,33 @@ def fetch_all_sources(ticker, name=None, limit=5):
     combined.extend(reddit_posts)
 
     return combined
+
+def fetch_atr(ticker, days=14):
+    """
+    Fetches Average True Range (ATR) from Finnhub — a volatility metric.
+    """
+    to_unix = int(time.time())
+    from_unix = to_unix - 60 * 60 * 24 * (days + 20)  # 20 buffer days
+
+    url = "https://finnhub.io/api/v1/indicator"
+    params = {
+        "symbol": ticker,
+        "resolution": "D",
+        "from": from_unix,
+        "to": to_unix,
+        "indicator": "atr",
+        "timeperiod": days,
+        "token": FINNHUB_API_KEY
+    }
+
+    try:
+        res = requests.get(url, params=params)
+        res.raise_for_status()
+        atr_values = res.json().get("technicalAnalysis", {}).get("atr", [])
+        if atr_values:
+            return round(atr_values[-1], 3)  # Most recent ATR
+        else:
+            return None
+    except Exception as e:
+        print(f"[ATR fetch error] {e}")
+        return None
