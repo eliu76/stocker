@@ -51,14 +51,15 @@ def analyze_sentiment(texts):
         })
 
     avg_score = np.mean(numeric_scores)
+    avg_score = round(avg_score, 2)
 
-    if avg_score > 0.5:
+    if avg_score >= 0.4:
         overall = "Strongly Positive"
-    elif avg_score > 0.2:
+    elif avg_score >= 0.1:
         overall = "Positive"
-    elif avg_score < -0.5:
+    elif avg_score <= -0.4:
         overall = "Strongly Negative"
-    elif avg_score < -0.2:
+    elif avg_score <= -0.1:
         overall = "Negative"
     else:
         overall = "Neutral"

@@ -35,7 +35,7 @@ def parse_input(content_list):
 
         text = clean_text(item)
 
-        if len(text) >= 30 and text not in seen:
+        if len(text) >= 10 and text not in seen:
             cleaned.append(text)
             seen.add(text)
 

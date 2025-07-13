@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
-from src.ingestion.fetch_data import fetch_all_sources
+from src.ingestion.fetch_data import fetch_all_sources, fetch_atr
 from src.ingestion.parse_data import parse_input
 from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
 from src.analysis.generate_recommendation import generate_recommendation
+from src.analysis.gpt_reccomendation import gpt_recommendation_prompt
 
 
 def main():
@@ -12,7 +13,7 @@ def main():
     name = "Apple"
 
     print(f"[Testing data fetch for: {ticker}]")
-    raw_data = fetch_all_sources(ticker, name, limit=5)
+    raw_data = fetch_all_sources(ticker, name, limit=10)
 
     print("\n--- Raw Fetched Data ---")
     for line in raw_data:
@@ -46,10 +47,34 @@ def main():
     explanation = generate_explanation(result, ticker, name)
     print(explanation)
 
-    print("\n--- Recommendation ---")
+    print("\n--- Rule-Based Recommendation ---")
     rec = generate_recommendation(result, ticker, name)
     print(f"Recommendation for {rec['ticker']}: {rec['recommendation']}")
     print(f"Reasoning: {rec['reasoning']}")
+
+    print("\n--- GPT-Based Recommendation ---")
+    atr = fetch_atr(ticker)
+    volatility = "Unknown"
+    if atr is not None:
+        if atr < 1:
+            volatility = "Low"
+        elif 1 <= atr <= 3:
+            volatility = "Moderate"
+        else:
+            volatility = "High"
+
+    gpt_response = gpt_recommendation_prompt(
+        avg_score=result["average_score"],
+        positive_pct=result["distribution"].get("Positive", 0),
+        negative_pct=result["distribution"].get("Negative", 0),
+        neutral_pct=result["distribution"].get("Neutral", 0),
+        sentiment=result["overall_sentiment"],
+        high_relevance_count=sum(1 for i in result["individual_scores"] if i["financial_relevance"] == "High"),
+        atr=atr,
+        volatility=volatility
+    )
+    print(gpt_response)
+
 
 if __name__ == "__main__":
     main()

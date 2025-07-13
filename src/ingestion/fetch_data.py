@@ -14,7 +14,7 @@ REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 REDDIT_SECRET = os.getenv("REDDIT_SECRET")
 REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
-def fetch_newsapi_articles(query, limit=5):
+def fetch_newsapi_articles(query, limit=10):
     """
     fetch recent news from NewsAPI related to the stock.
     """
@@ -35,7 +35,7 @@ def fetch_newsapi_articles(query, limit=5):
     except Exception as e:
         return [f"[NewsAPI error] {str(e)}"]
 
-def fetch_finnhub_news(ticker, limit=5):
+def fetch_finnhub_news(ticker, limit=10):
     """
     fetch company news from Finnhub related to the ticker.
     """
@@ -55,7 +55,7 @@ def fetch_finnhub_news(ticker, limit=5):
     except Exception as e:
         return [f"[Finnhub error] {str(e)}"]
 
-def fetch_reddit_posts(query, limit=5):
+def fetch_reddit_posts(query, limit=10):
     reddit = praw.Reddit(
         client_id=REDDIT_CLIENT_ID,
         client_secret=REDDIT_SECRET,
@@ -71,7 +71,7 @@ def fetch_reddit_posts(query, limit=5):
 
     return posts
 
-def fetch_all_sources(ticker, name=None, limit=5):
+def fetch_all_sources(ticker, name=None, limit=10):
     """
     fetch data from NewsAPI, Finnhub, and Reddit.
     """
