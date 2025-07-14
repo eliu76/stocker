@@ -77,11 +77,16 @@ function App() {
           <h3>Explanation</h3>
           <pre>{result.explanation}</pre>
 
-          <h3>Recommendation</h3>
+          <h3>Rule-Based Recommendation</h3>
           <p>
-            <strong>{result.recommendation.recommendation}</strong> —{" "}
-            {result.recommendation.reasoning}
+            <strong>{result.recommendation.recommendation}</strong> — {result.recommendation.reasoning}
           </p>
+
+          <h3>LLM-Based Recommendation (Groq)</h3>
+          <p>
+            <strong>{result.llm_recommendation.recommendation}</strong> — {result.llm_recommendation.reasoning}
+          </p>
+          
         </section>
       )}
     </div>
