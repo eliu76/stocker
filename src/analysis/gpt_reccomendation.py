@@ -1,13 +1,13 @@
 import os
-import json
+import httpx
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = "llama3-70b-8192"  # or "mixtral-8x7b-32768"
 
-def gpt_recommendation_prompt(avg_score, positive_pct, negative_pct, neutral_pct, sentiment, high_relevance_count, atr, volatility):
+def groq_recommendation_prompt(avg_score, positive_pct, negative_pct, neutral_pct, sentiment, high_relevance_count, atr, volatility):
     prompt = f"""
 You are a financial assistant trained in sentiment-based stock analysis.
 
@@ -21,23 +21,26 @@ Here is the data for a stock:
 Please provide:
 1. A recommendation: "Buy", "Hold", or "Sell"
 2. A brief explanation (1–2 sentences) justifying the recommendation
+3. Format should be Reccomendation (buy, hold, or sell) — reasoning
 
-Respond in JSON:
-{{
-  "recommendation": "...",
-  "reason": "..."
-}}
 """
 
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a helpful financial assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-        )
-        return response.choices[0].message.content
+        response = httpx.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
-        return json.dumps({
-            "recommendation": "Hold",
-            "reason": f"GPT API error: {str(e)}"
-        })
+        return f"[Groq API Error] {str(e)}"

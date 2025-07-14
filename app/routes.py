@@ -1,11 +1,34 @@
 from flask import Blueprint, request, jsonify
-from src.ingestion.fetch_data import fetch_all_sources
+from src.ingestion.fetch_data import fetch_all_sources, fetch_atr
 from src.ingestion.parse_data import parse_input
 from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
 from src.analysis.generate_recommendation import generate_recommendation
+from src.analysis.gpt_reccomendation import groq_recommendation_prompt
 
 api = Blueprint("api", __name__)
+
+def parse_groq_response(text):
+    # Expecting format: Recommendation — Reasoning
+    # e.g. "Buy — The stock shows strong positive sentiment..."
+    try:
+        # Split on em dash or hyphen dash variants, be flexible
+        if "—" in text:
+            parts = text.split("—", 1)
+        elif "-" in text:
+            parts = text.split("-", 1)
+        else:
+            # fallback if no dash found
+            return {"recommendation": "Hold", "reasoning": text.strip()}
+
+        rec = parts[0].strip().capitalize()
+        reason = parts[1].strip()
+        # Validate recommendation is one of expected values
+        if rec.lower() not in ("buy", "hold", "sell"):
+            rec = "Hold"  # default fallback
+        return {"recommendation": rec, "reasoning": reason}
+    except Exception:
+        return {"recommendation": "Hold", "reasoning": text.strip()}
 
 @api.route("/analyze", methods=["POST"])
 def analyze_stock():
@@ -29,6 +52,35 @@ def analyze_stock():
         explanation = generate_explanation(sentiment_result, ticker_for_finnhub, name_for_news)
         recommendation = generate_recommendation(sentiment_result, ticker_for_finnhub, name_for_news)
 
+        # Pull relevant features for LLM call
+        high_relevance_count = sum(
+            1 for i in sentiment_result["individual_scores"] if i["financial_relevance"] == "High"
+        )
+
+        atr = fetch_atr(ticker_for_finnhub)
+        if atr is not None:
+            if atr < 1:
+                volatility_level = "Low"
+            elif atr <= 3:
+                volatility_level = "Moderate"
+            else:
+                volatility_level = "High"
+        else:
+            volatility_level = "Unknown"
+
+        raw_llm_response = groq_recommendation_prompt(
+            avg_score=sentiment_result["average_score"],
+            positive_pct=sentiment_result["distribution"]["Positive"],
+            negative_pct=sentiment_result["distribution"]["Negative"],
+            neutral_pct=sentiment_result["distribution"]["Neutral"],
+            sentiment=sentiment_result["overall_sentiment"],
+            high_relevance_count=high_relevance_count,
+            atr=atr,
+            volatility=volatility_level
+        )
+
+        llm_recommendation = parse_groq_response(raw_llm_response)
+
         return jsonify({
             "ticker": ticker_for_finnhub,
             "company_name": name_for_news,
@@ -36,7 +88,8 @@ def analyze_stock():
             "cleaned_sources": cleaned,
             "sentiment_result": sentiment_result,
             "explanation": explanation,
-            "recommendation": recommendation
+            "recommendation": recommendation,
+            "llm_recommendation": llm_recommendation  # Now parsed JSON
         })
 
     except Exception as e:

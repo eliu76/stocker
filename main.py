@@ -4,8 +4,7 @@ from src.ingestion.parse_data import parse_input
 from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
 from src.analysis.generate_recommendation import generate_recommendation
-from src.analysis.gpt_reccomendation import gpt_recommendation_prompt
-
+from src.analysis.gpt_reccomendation import groq_recommendation_prompt
 
 def main():
     load_dotenv()
@@ -52,28 +51,17 @@ def main():
     print(f"Recommendation for {rec['ticker']}: {rec['recommendation']}")
     print(f"Reasoning: {rec['reasoning']}")
 
-    print("\n--- GPT-Based Recommendation ---")
-    atr = fetch_atr(ticker)
-    volatility = "Unknown"
-    if atr is not None:
-        if atr < 1:
-            volatility = "Low"
-        elif 1 <= atr <= 3:
-            volatility = "Moderate"
-        else:
-            volatility = "High"
-
-    gpt_response = gpt_recommendation_prompt(
+    print("\n--- LLM-Based Recommendation (Groq) ---")
+    print(groq_recommendation_prompt(
         avg_score=result["average_score"],
-        positive_pct=result["distribution"].get("Positive", 0),
-        negative_pct=result["distribution"].get("Negative", 0),
-        neutral_pct=result["distribution"].get("Neutral", 0),
+        positive_pct=result["distribution"]["Positive"],
+        negative_pct=result["distribution"]["Negative"],
+        neutral_pct=result["distribution"]["Neutral"],
         sentiment=result["overall_sentiment"],
         high_relevance_count=sum(1 for i in result["individual_scores"] if i["financial_relevance"] == "High"),
-        atr=atr,
-        volatility=volatility
-    )
-    print(gpt_response)
+        atr=rec.get("atr", "N/A"),
+        volatility="Unknown" if "volatility" not in rec else rec["volatility"]
+    ))
 
 
 if __name__ == "__main__":
