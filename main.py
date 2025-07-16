@@ -1,3 +1,5 @@
+# used for local testing
+
 from dotenv import load_dotenv
 from src.ingestion.fetch_data import fetch_all_sources, fetch_atr
 from src.ingestion.parse_data import parse_input

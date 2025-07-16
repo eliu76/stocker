@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = "llama3-70b-8192"  # or "mixtral-8x7b-32768"
+GROQ_MODEL = "llama3-70b-8192"
 
 def groq_recommendation_prompt(avg_score, positive_pct, negative_pct, neutral_pct, sentiment, high_relevance_count, atr, volatility):
     prompt = f"""

@@ -1,3 +1,5 @@
+# this class creates the routes to communicate between the backend and the frontend
+
 from flask import Blueprint, request, jsonify
 from src.ingestion.fetch_data import fetch_all_sources, fetch_atr
 from src.ingestion.parse_data import parse_input
@@ -9,23 +11,21 @@ from src.analysis.gpt_reccomendation import groq_recommendation_prompt
 api = Blueprint("api", __name__)
 
 def parse_groq_response(text):
-    # Expecting format: Recommendation — Reasoning
-    # e.g. "Buy — The stock shows strong positive sentiment..."
+    # expected format: Recommendation — Reasoning
+    # returns string in JSON format
     try:
-        # Split on em dash or hyphen dash variants, be flexible
         if "—" in text:
             parts = text.split("—", 1)
         elif "-" in text:
             parts = text.split("-", 1)
         else:
-            # fallback if no dash found
             return {"recommendation": "Hold", "reasoning": text.strip()}
 
         rec = parts[0].strip().capitalize()
         reason = parts[1].strip()
-        # Validate recommendation is one of expected values
+
         if rec.lower() not in ("buy", "hold", "sell"):
-            rec = "Hold"  # default fallback
+            rec = "Hold"
         return {"recommendation": rec, "reasoning": reason}
     except Exception:
         return {"recommendation": "Hold", "reasoning": text.strip()}
@@ -38,21 +38,18 @@ def analyze_stock():
         ticker = data.get("ticker", "").strip().upper()
         company_name = data.get("company_name", "").strip()
 
-        # Require at least one identifier
         if not ticker and not company_name:
             return jsonify({"error": "Please provide at least a ticker or company name."}), 400
 
         name_for_news = company_name or ticker
         ticker_for_finnhub = ticker or company_name[:4].upper()
 
-        # Fetch and process data
         raw = fetch_all_sources(ticker_for_finnhub, name_for_news, limit=5)
         cleaned = parse_input(raw)
         sentiment_result = analyze_sentiment(cleaned)
         explanation = generate_explanation(sentiment_result, ticker_for_finnhub, name_for_news)
         recommendation = generate_recommendation(sentiment_result, ticker_for_finnhub, name_for_news)
 
-        # Pull relevant features for LLM call
         high_relevance_count = sum(
             1 for i in sentiment_result["individual_scores"] if i["financial_relevance"] == "High"
         )
@@ -89,7 +86,7 @@ def analyze_stock():
             "sentiment_result": sentiment_result,
             "explanation": explanation,
             "recommendation": recommendation,
-            "llm_recommendation": llm_recommendation  # Now parsed JSON
+            "llm_recommendation": llm_recommendation
         })
 
     except Exception as e:

@@ -1,3 +1,5 @@
+# this class serves to generate some buying/holding/selling rules about the sentiment analysis using different metrics
+
 from src.ingestion.fetch_data import fetch_atr
 
 def generate_recommendation(sentiment_result, ticker, company_name=None):

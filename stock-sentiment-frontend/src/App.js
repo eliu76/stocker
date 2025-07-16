@@ -1,5 +1,7 @@
+/* react frontend */
+
 import React, { useState } from "react";
-import "./App.css"; // make sure to import your CSS here
+import "./App.css";
 
 function App() {
   const [ticker, setTicker] = useState("");
