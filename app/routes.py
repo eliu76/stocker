@@ -7,6 +7,9 @@ from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
 from src.analysis.generate_recommendation import generate_recommendation
 from src.analysis.gpt_reccomendation import groq_recommendation_prompt
+from src.ingestion.price_data import fetch_historical_prices, simulate_performance
+from src.models.watchlist_model import Watchlist, db 
+from flask import current_app
 
 api = Blueprint("api", __name__)
 
@@ -29,6 +32,49 @@ def parse_groq_response(text):
         return {"recommendation": rec, "reasoning": reason}
     except Exception:
         return {"recommendation": "Hold", "reasoning": text.strip()}
+    
+@api.route("/watchlist/performance", methods=["GET"])
+def watchlist_performance():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
+    try:
+        items = Watchlist.query.filter_by(user_id=user_id).all()
+        performance_results = []
+
+        for item in items:
+            ticker = item.ticker
+
+            prices = fetch_historical_prices(ticker, days=30)
+
+            # Fetch recommendation using fake sentiment data or placeholder
+            # Placeholder for now
+            raw_llm_response = groq_recommendation_prompt(
+                avg_score=0.1,  
+                positive_pct=40,
+                negative_pct=30,
+                neutral_pct=30,
+                sentiment="Neutral",
+                high_relevance_count=1,
+                atr=1.5,
+                volatility="Moderate"
+            )
+            llm_rec = parse_groq_response(raw_llm_response)
+            rec = llm_rec.get("recommendation", "Hold")
+
+            sim_result = simulate_performance(prices, rec)
+
+            performance_results.append({
+                "ticker": ticker,
+                "recommendation": rec,
+                "performance": sim_result
+            })
+
+        return jsonify(performance_results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @api.route("/analyze", methods=["POST"])
 def analyze_stock():
@@ -75,8 +121,10 @@ def analyze_stock():
             atr=atr,
             volatility=volatility_level
         )
-
         llm_recommendation = parse_groq_response(raw_llm_response)
+
+        historical_prices = fetch_historical_prices(ticker_for_finnhub)
+        performance_simulation = simulate_performance(historical_prices, llm_recommendation["recommendation"])
 
         return jsonify({
             "ticker": ticker_for_finnhub,
@@ -86,8 +134,10 @@ def analyze_stock():
             "sentiment_result": sentiment_result,
             "explanation": explanation,
             "recommendation": recommendation,
-            "llm_recommendation": llm_recommendation
+            "llm_recommendation": llm_recommendation,
+            "performance_simulation": performance_simulation
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+

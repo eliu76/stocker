@@ -7,6 +7,25 @@ from src.analysis.sentiment_analysis import analyze_sentiment
 from src.analysis.explain_sentiment import generate_explanation
 from src.analysis.generate_recommendation import generate_recommendation
 from src.analysis.gpt_reccomendation import groq_recommendation_prompt
+from src.ingestion.price_data import fetch_historical_prices, simulate_performance
+
+def parse_groq_response(text):
+    try:
+        if "—" in text:
+            parts = text.split("—", 1)
+        elif "-" in text:
+            parts = text.split("-", 1)
+        else:
+            return {"recommendation": "Hold", "reasoning": text.strip()}
+
+        rec = parts[0].strip().capitalize()
+        reason = parts[1].strip()
+
+        if rec.lower() not in ("buy", "hold", "sell"):
+            rec = "Hold"
+        return {"recommendation": rec, "reasoning": reason}
+    except Exception:
+        return {"recommendation": "Hold", "reasoning": text.strip()}
 
 def main():
     load_dotenv()
@@ -54,17 +73,41 @@ def main():
     print(f"Reasoning: {rec['reasoning']}")
 
     print("\n--- LLM-Based Recommendation (Groq) ---")
-    print(groq_recommendation_prompt(
+    atr = fetch_atr(ticker)
+    volatility = "Unknown"
+    if atr is not None:
+        if atr < 1:
+            volatility = "Low"
+        elif atr <= 3:
+            volatility = "Moderate"
+        else:
+            volatility = "High"
+
+    raw_llm = groq_recommendation_prompt(
         avg_score=result["average_score"],
         positive_pct=result["distribution"]["Positive"],
         negative_pct=result["distribution"]["Negative"],
         neutral_pct=result["distribution"]["Neutral"],
         sentiment=result["overall_sentiment"],
         high_relevance_count=sum(1 for i in result["individual_scores"] if i["financial_relevance"] == "High"),
-        atr=rec.get("atr", "N/A"),
-        volatility="Unknown" if "volatility" not in rec else rec["volatility"]
-    ))
+        atr=atr,
+        volatility=volatility
+    )
+    parsed_llm = parse_groq_response(raw_llm)
 
+    print(f"LLM Recommendation: {parsed_llm['recommendation']}")
+    print(f"LLM Reasoning: {parsed_llm['reasoning']}")
+
+    print("\n--- Historical Performance Simulation ---")
+    prices = fetch_historical_prices(ticker, days=30)
+    if not prices:
+        print("[!] No historical price data available.")
+        return
+
+    sim = simulate_performance(prices, parsed_llm["recommendation"])
+    print(f"Start Price: ${sim['start_price']:.2f}")
+    print(f"End Price:   ${sim['end_price']:.2f}")
+    print(f"Simulated Return (%): {sim['simulated_return_pct']:.2f}%")
 
 if __name__ == "__main__":
     main()

@@ -88,6 +88,42 @@ function App() {
           <p>
             <strong>{result.llm_recommendation.recommendation}</strong> — {result.llm_recommendation.reasoning}
           </p>
+
+          {result.performance_simulation &&
+            result.llm_recommendation &&
+            !result.performance_simulation.error && (
+              <>
+                <h3> Simulated 30-Day Return</h3>
+                <p>
+                  If you'd followed the recommendation (
+                  <strong>{result.llm_recommendation.recommendation}</strong>) 30 days ago:
+                </p>
+                <ul>
+                  <li>Start Price: ${result.performance_simulation.start_price.toFixed(2)}</li>
+                  <li>End Price: ${result.performance_simulation.end_price.toFixed(2)}</li>
+                  <li>
+                    Simulated Return:&nbsp;
+                    <strong
+                      style={{
+                        color:
+                          result.performance_simulation.simulated_return_pct >= 0
+                            ? "green"
+                            : "red",
+                      }}
+                    >
+                      {result.performance_simulation.simulated_return_pct.toFixed(2)}%
+                    </strong>
+                  </li>
+                </ul>
+              </>
+          )}
+
+          {result.performance_simulation?.error && (
+            <p style={{ color: "gray" }}>
+              Could not simulate performance: {result.performance_simulation.error}
+            </p>
+          )}
+
           
         </section>
       )}
