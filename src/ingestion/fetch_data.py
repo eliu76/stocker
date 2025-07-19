@@ -5,6 +5,7 @@ import requests
 import praw
 import time
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -15,15 +16,22 @@ REDDIT_SECRET = os.getenv("REDDIT_SECRET")
 REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 def fetch_newsapi_articles(query, limit=10):
-    """
-    fetch recent news from NewsAPI related to the stock.
-    """
+
+    finance_keywords = "(stock OR market OR earnings OR finance OR investment OR analyst)"
+    combined_query = f"{query} OR {finance_keywords}"
+
+    trusted_sources = "bloomberg,reuters,cnbc,the-wall-street-journal,financial-times"
+
+    from_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": query,
+        "q": combined_query,
         "pageSize": limit,
-        "sortBy": "publishedAt",
+        "sortBy": "relevancy",
         "language": "en",
+        "sources": trusted_sources,
+        "from": from_date,
         "apiKey": NEWS_API_KEY
     }
 
@@ -37,21 +45,36 @@ def fetch_newsapi_articles(query, limit=10):
 
 def fetch_finnhub_news(ticker, limit=10):
     """
-    fetch company news from Finnhub related to the ticker.
+    fetch company news from Finnhub and filter for finance-related articles.
     """
     url = f"https://finnhub.io/api/v1/company-news"
     params = {
         "symbol": ticker,
-        "from": "2024-06-01",
-        "to": "2025-07-04",
+        "from": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+        "to": datetime.now().strftime("%Y-%m-%d"),
         "token": FINNHUB_API_KEY
     }
+
+    finance_keywords = {"stock", "market", "earnings", "finance", "investment", "analyst"}
 
     try:
         res = requests.get(url, params=params)
         res.raise_for_status()
-        articles = res.json()[:limit]
-        return [a.get("headline", "") + ". " + a.get("summary", "") for a in articles]
+        articles = res.json()
+
+        filtered = []
+        for a in articles:
+            headline = a.get("headline", "").lower()
+            summary = a.get("summary", "").lower()
+
+            if any(kw in headline or kw in summary for kw in finance_keywords):
+                filtered.append(a)
+
+            if len(filtered) >= limit:
+                break
+
+        return [f"{a.get('headline', '')}. {a.get('summary', '')}" for a in filtered]
+
     except Exception as e:
         return [f"[Finnhub error] {str(e)}"]
 
@@ -63,9 +86,14 @@ def fetch_reddit_posts(query, limit=10):
     )
 
     posts = []
+    subreddits = ["investing", "stocks", "finance", "ValueInvesting"]
+    per_sub_limit = max(1, limit // len(subreddits))
+
     try:
-        for submission in reddit.subreddit("all").search(query, limit=limit):
-            posts.append(submission.title + ". " + submission.selftext[:280])
+        for subreddit_name in subreddits:
+            for submission in reddit.subreddit(subreddit_name).search(query, limit=per_sub_limit):
+                post_text = submission.title + ". " + (submission.selftext[:280] if submission.selftext else "")
+                posts.append(post_text)
     except Exception as e:
         posts.append(f"[Reddit API error] {str(e)}")
 
@@ -97,7 +125,7 @@ def fetch_atr(ticker, days=14):
     Fetches Average True Range (ATR) from Finnhub — a volatility metric.
     """
     to_unix = int(time.time())
-    from_unix = to_unix - 60 * 60 * 24 * (days + 20)  # 20 buffer days
+    from_unix = to_unix - 60 * 60 * 24 * (days + 20)
 
     url = "https://finnhub.io/api/v1/indicator"
     params = {
@@ -115,7 +143,7 @@ def fetch_atr(ticker, days=14):
         res.raise_for_status()
         atr_values = res.json().get("technicalAnalysis", {}).get("atr", [])
         if atr_values:
-            return round(atr_values[-1], 3)  # Most recent ATR
+            return round(atr_values[-1], 3)
         else:
             return None
     except Exception as e:
