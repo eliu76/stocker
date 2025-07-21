@@ -135,7 +135,8 @@ def analyze_stock():
             "explanation": explanation,
             "recommendation": recommendation,
             "llm_recommendation": llm_recommendation,
-            "performance_simulation": performance_simulation
+            "performance_simulation": performance_simulation,
+            "historical_prices": historical_prices
         })
 
     except Exception as e:

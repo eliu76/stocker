@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import "./App.css";
+import StockPerformanceChart from "./chart";
 
 function App() {
   const [ticker, setTicker] = useState("");
@@ -115,6 +116,11 @@ function App() {
                     </strong>
                   </li>
                 </ul>
+                {result && result.performance_simulation && !result.performance_simulation.error && (
+                  <>
+                    <StockPerformanceChart prices={result.historical_prices} ticker={result.ticker} />
+                  </>
+                )}
               </>
           )}
 

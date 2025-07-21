@@ -27,23 +27,30 @@ def simulate_performance(prices, recommendation):
     start_price = prices[0]["close"]
     end_price = prices[-1]["close"]
 
+    dates = [p["date"] for p in prices]
+    closes = [p["close"] for p in prices]
+
+    simulated_values = []
     if recommendation.lower() == "buy":
-        return {
-            "start_price": start_price,
-            "end_price": end_price,
-            "simulated_return_pct": ((end_price - start_price) / start_price) * 100
-        }
+        shares = 1 
+        simulated_values = [shares * price for price in closes]
     elif recommendation.lower() == "sell":
-        return {
-            "start_price": start_price,
-            "end_price": end_price,
-            "simulated_return_pct": ((start_price - end_price) / start_price) * 100
-        }
+        shares = 1
+        simulated_values = [shares * (2 * start_price - price) for price in closes]
     elif recommendation.lower() == "hold":
-        return {
-            "start_price": start_price,
-            "end_price": end_price,
-            "simulated_return_pct": 0.0
-        }
+        simulated_values = [start_price] * len(closes)
     else:
         return {"error": f"Unknown recommendation: {recommendation}"}
+
+    return {
+        "start_price": start_price,
+        "end_price": end_price,
+        "simulated_return_pct": ((end_price - start_price) / start_price) * 100 if recommendation.lower() == "buy"
+                                 else ((start_price - end_price) / start_price) * 100 if recommendation.lower() == "sell"
+                                 else 0.0,
+        "graph_data": {
+            "dates": dates,
+            "prices": closes,
+            "simulated": simulated_values
+        }
+    }
