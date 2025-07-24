@@ -1,4 +1,4 @@
-# this class serves to parse the data produced by fetch_data.py and produces a clean and filtered list of data
+# this class serves to parse data produced by fetch_data.py and produce a clean and filtered list
 
 import re
 

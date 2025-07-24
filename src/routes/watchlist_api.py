@@ -7,19 +7,24 @@ watchlist_bp = Blueprint("watchlist", __name__)
 def test_watchlist():
     return {"message": "Watchlist route is working"}
 
-@watchlist_bp.route("/api/watchlist", methods=["GET"])
+@watchlist_bp.route("/", methods=["GET"])
 def get_watchlist():
-    user_id = request.args.get("user_id", "guest")
-    items = Watchlist.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": item.id,
-        "ticker": item.ticker,
-        "notes": item.notes,
-        "priority": item.priority,
-        "created_at": item.created_at
-    } for item in items])
+    try:
+        user_id = request.args.get("user_id", "guest")
+        items = Watchlist.query.filter_by(user_id=user_id).all()
 
-@watchlist_bp.route("/watchlist", methods=["POST"])
+        return jsonify([{
+            "id": item.id,
+            "ticker": item.ticker,
+            "notes": item.notes,
+            "priority": item.priority,
+            "created_at": item.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+        } for item in items])
+    except Exception as e:
+        print("WATCHLIST ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
+@watchlist_bp.route("/", methods=["POST"])
 def add_to_watchlist():
     data = request.get_json()
 
@@ -38,7 +43,7 @@ def add_to_watchlist():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@watchlist_bp.route("/watchlist/<int:item_id>", methods=["DELETE"])
+@watchlist_bp.route("/<int:item_id>", methods=["DELETE"])
 def delete_watchlist_item(item_id):
     item = Watchlist.query.get(item_id)
     if not item:

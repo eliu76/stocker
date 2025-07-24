@@ -18,7 +18,7 @@ def create_app():
         db.create_all()
 
     # Register both route blueprints
-    app.register_blueprint(api, url_prefix="/api")          # stock analysis
-    app.register_blueprint(watchlist_bp, url_prefix="/api") # watchlist
+    app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(watchlist_bp, url_prefix="/api/watchlist")
 
     return app

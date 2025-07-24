@@ -48,8 +48,6 @@ def watchlist_performance():
 
             prices = fetch_historical_prices(ticker, days=30)
 
-            # Fetch recommendation using fake sentiment data or placeholder
-            # Placeholder for now
             raw_llm_response = groq_recommendation_prompt(
                 avg_score=0.1,  
                 positive_pct=40,
@@ -68,7 +66,8 @@ def watchlist_performance():
             performance_results.append({
                 "ticker": ticker,
                 "recommendation": rec,
-                "performance": sim_result
+                "performance": sim_result,
+                "prices": prices
             })
 
         return jsonify(performance_results)
