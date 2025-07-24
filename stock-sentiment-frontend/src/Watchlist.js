@@ -1,3 +1,5 @@
+/* watchlist web page that diplsays current watchlist, allows for insertion/deletion and stock price graph visual */
+
 import React, { useState, useEffect } from "react";
 import StockPerformanceChart from "./chart";
 
@@ -108,7 +110,7 @@ const Watchlist = () => {
               <strong>{item.ticker}</strong>
               <button
                 style={{ marginLeft: "1rem" }}
-                onClick={() => handleDelete(item.id)} // Note: make sure `id` exists on item or adjust accordingly
+                onClick={() => handleDelete(item.id)}
               >
                 Remove
               </button>

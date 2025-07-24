@@ -1,3 +1,5 @@
+/* react home page */
+
 import React, { useState } from "react";
 import "./App.css";
 import AnalyzePage from "./Analyze";

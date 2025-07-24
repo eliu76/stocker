@@ -1,3 +1,5 @@
+# watchlist database implemenation using SQLAlchemy
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 

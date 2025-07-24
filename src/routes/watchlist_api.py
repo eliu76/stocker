@@ -1,3 +1,5 @@
+# watchlist api routes for frontend
+
 from flask import Blueprint, request, jsonify
 from src.models.watchlist_model import db, Watchlist
 

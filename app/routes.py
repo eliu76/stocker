@@ -14,7 +14,7 @@ from flask import current_app
 api = Blueprint("api", __name__)
 
 def parse_groq_response(text):
-    # expected format: Recommendation — Reasoning
+    # expected format: recommendation — reasoning
     # returns string in JSON format
     try:
         if "—" in text:

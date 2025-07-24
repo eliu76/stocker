@@ -1,3 +1,5 @@
+/* analyze stock web page that allows user to choose which stock to scrape the web for sentiment for and generate a reccomendation*/
+
 import React, { useState } from "react";
 import StockPerformanceChart from "./chart";
 

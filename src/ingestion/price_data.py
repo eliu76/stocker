@@ -1,3 +1,7 @@
+# has two classes: 
+# fetch_historical_prices: fetches prices for a ticker using yfinance
+# simulate_perforamance: based on recommendation passed in, simulates what the stock price could look like in the future
+
 import yfinance as yf
 from datetime import datetime, timedelta
 
