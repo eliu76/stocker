@@ -1,4 +1,5 @@
-/* watchlist web page that diplsays current watchlist, allows for insertion/deletion and stock price graph visual */
+/* watchlist web page that displays current watchlist, allows for insertion/deletion,
+   stock price graph visual, and manual digest email sending */
 
 import React, { useState, useEffect } from "react";
 import StockPerformanceChart from "./chart";
@@ -85,6 +86,31 @@ const Watchlist = () => {
     }
   };
 
+const handleSendDigest = async () => {
+  try {
+    setError("");
+    const response = await fetch("http://localhost:5000/api/digest/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error || "Failed to send digest");
+      return;
+    }
+
+    alert("Digest email has been sent successfully!");
+  } catch (err) {
+    setError("Failed to send digest email");
+    console.error(err);
+  }
+};
+
   return (
     <div className="watchlist">
       <h2>Watchlist</h2>
@@ -96,8 +122,23 @@ const Watchlist = () => {
           onChange={(e) => setNewTicker(e.target.value)}
           placeholder="Add ticker (e.g. AAPL)"
         />
-        <button onClick={handleAddTicker}>Add</button>
+        <button style={{ marginLeft: "0.5rem" }} onClick={handleAddTicker}>Add</button>
       </div>
+
+      <button
+        style={{
+          marginTop: "1rem",
+          backgroundColor: "#4CAF50",
+          color: "white",
+          padding: "8px 12px",
+          border: "none",
+          cursor: "pointer",
+          borderRadius: "4px",
+        }}
+        onClick={handleSendDigest}
+      >
+        Send me my daily digest email
+      </button>
 
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
@@ -109,7 +150,7 @@ const Watchlist = () => {
             <li key={item.ticker} style={{ marginBottom: "2rem" }}>
               <strong>{item.ticker}</strong>
               <button
-                style={{ marginLeft: "1rem" }}
+                style={{ marginLeft: "1rem", backgroundColor: "#d41a1aff", color: "white", border: "none", padding: "4px 8px", borderRadius: "3px", cursor: "pointer" }}
                 onClick={() => handleDelete(item.id)}
               >
                 Remove

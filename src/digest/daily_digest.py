@@ -11,13 +11,17 @@ import os
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
-def generate_digest_for_user(user_id, user_email):
+def generate_digest_for_user(user_id, user_email=None):
+    # fallback to a hardcoded email for testing
+    if not user_email:
+        user_email = "evanliu76@gmail.com"
+
     items = Watchlist.query.filter_by(user_id=user_id).all()
     if not items:
         return None
 
-    digest_lines = [f"📈 Watchlist Digest — {datetime.utcnow().date()}"]
-    
+    digest_lines = [f"Watchlist Digest — {datetime.utcnow().date()}"]
+
     for item in items:
         prices = fetch_historical_prices(item.ticker, days=30)
         raw_llm_response = groq_recommendation_prompt(
@@ -28,8 +32,10 @@ def generate_digest_for_user(user_id, user_email):
         rec = parse_groq_response(raw_llm_response)
         sim_result = simulate_performance(prices, rec["recommendation"])
         pct_change = sim_result.get("pct_change", "N/A")
-        
-        digest_lines.append(f"- {item.ticker}: {rec['recommendation']} ({pct_change}%) — {rec['reasoning']}")
+
+        digest_lines.append(
+            f"- {item.ticker}: {rec['recommendation']} ({pct_change}%) — {rec['reasoning']}"
+        )
 
     digest_content = "\n".join(digest_lines)
     send_email(user_email, "Your Daily Stock Digest", digest_content)

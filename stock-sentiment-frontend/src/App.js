@@ -10,13 +10,14 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Stock Sentiment Analyzer</h1>
+      <h1>Stocker - AI Stock Sentiment App</h1>
 
       <div className="tab-buttons">
         <button onClick={() => setActiveTab("analyze")} className={activeTab === "analyze" ? "active" : ""}>
           Analyze
         </button>
-        <button onClick={() => setActiveTab("watchlist")} className={activeTab === "watchlist" ? "active" : ""}>
+
+        <button style={{ marginLeft: "0.5rem" }} onClick={() => setActiveTab("watchlist")} className={activeTab === "watchlist" ? "active" : ""}>
           Watchlist
         </button>
       </div>
